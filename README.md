@@ -40,13 +40,3 @@ monthly files in `wildfire_dataset/` so an interrupted build can resume. To
 make the single file again from completed monthly files, run
 `python build_wildfire_dataset.py --combine-only`. Read only the rows or
 columns you need; loading every row at once can use too much memory.
-
-To train a logistic regression model on 2023 and test it on 2024:
-
-```powershell
-python train_wildfire_logistic.py --dataset wildfire_dataset.parquet --train-end 2023-12 --test-start 2024-01 --output wildfire_logistic_national
-```
-
-The national model's prediction quality has not yet been measured. Use the
-held-out test metrics to judge it. Most cell-months have no recorded fire, so
-accuracy alone can be misleading.

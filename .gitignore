@@ -13,5 +13,3 @@
 !/precompute_national_streams.py
 !/audit_wildfire_dataset.py
 !/wildfire_dataset_io.py
-!/train_wildfire_logistic.py
-!/test_wildfire_training.py

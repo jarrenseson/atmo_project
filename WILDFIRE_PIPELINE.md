@@ -39,9 +39,8 @@ python build_wildfire_dataset.py --start 2023-01 --end 2024-12 --output wildfire
 
 The finished local dataset is `wildfire_dataset.parquet`. Its audit passed for
 24 months, 779,958 cells, and 18,718,992 unique cell-month rows. It contains
-147,295 fire-positive rows. There are 15,303,339 rows with every model feature
-present. The complete rows still need a time-aware train/test split before
-model fitting.
+147,295 fire-positive rows. There are 15,303,339 rows with every source
+feature present.
 
 | Source | Output fields |
 | --- | --- |
