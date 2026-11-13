@@ -1,0 +1,15 @@
+numpy>=2.3
+pandas>=2.3
+pyarrow>=20
+rasterio>=1.4
+netCDF4>=1.7
+h5py>=3.13
+pyproj>=3.7
+shapely>=2.1
+pyogrio>=0.11
+geopandas>=1.0
+scikit-learn>=1.7
+Pillow>=11
+scipy>=1.15
+requests>=2.32
+joblib>=1.4

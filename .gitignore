@@ -1,0 +1,17 @@
+# Publish code and instructions. Keep large local data out of Git.
+*
+!/.gitignore
+!/README.md
+!/DATA_SOURCES.md
+!/WILDFIRE_PIPELINE.md
+!/requirements_wildfire_pipeline.txt
+!/download_wildfire_sources.py
+!/build_wildfire_dataset.py
+!/derive_3dep_terrain.py
+!/extract_transportation_gpkg.py
+!/precompute_national_roads.py
+!/precompute_national_streams.py
+!/audit_wildfire_dataset.py
+!/wildfire_dataset_io.py
+!/train_wildfire_logistic.py
+!/test_wildfire_training.py
