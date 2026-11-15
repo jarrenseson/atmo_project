@@ -1,6 +1,6 @@
 # US wildfire occurrence by 2-mile grid cell
 
-This project combines climate, land cover, vegetation, terrain, roads, streams,
+This project combines climate, land cover, vegetation, elevation, roads, streams,
 and recorded wildfire locations. Each output row describes one 2 × 2 mile cell
 in the contiguous United States during one month. The key is `(cell_id, month)`.
 The target, `wildfire_recorded`, is 1 when FPA-FOD records a fire in that cell
@@ -27,7 +27,6 @@ disk space. Then run:
 ```powershell
 python -m pip install -r requirements_wildfire_pipeline.txt
 python download_wildfire_sources.py
-python derive_3dep_terrain.py
 python extract_transportation_gpkg.py
 python precompute_national_roads.py
 python precompute_national_streams.py

@@ -7,7 +7,6 @@
 !/requirements_wildfire_pipeline.txt
 !/download_wildfire_sources.py
 !/build_wildfire_dataset.py
-!/derive_3dep_terrain.py
 !/extract_transportation_gpkg.py
 !/precompute_national_roads.py
 !/precompute_national_streams.py

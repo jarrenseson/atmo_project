@@ -21,7 +21,7 @@ Source addresses and product versions can change; check the provider pages.
 | gridMET | `gridMET/{tmmx,tmmn,pr,vs}_{2022,2023,2024}.nc` | [gridMET](https://www.climatologylab.org/gridmet.html) |
 | Annual NLCD | `NLCD/Annual_NLCD_LndCov_{2022,2023,2025}_CU_C1V2.zip` | [MRLC](https://www.mrlc.gov/data) |
 | MOD13Q1.061 | `MOD13Q1/2022_NDVI_quality/` for December 3; full `2023_NDVI_quality/` and `2024_NDVI_quality/` subsets, with quality fields and records | [NASA](https://doi.org/10.5067/MODIS/MOD13Q1.061) |
-| 3DEP | Four CONUS `3dep_elevation_*_approx1to3km.tif` service extracts in `3DEP/`; derived rasters in `3DEP/derived/` | [USGS 3DEP](https://www.usgs.gov/3d-elevation-program) |
+| 3DEP | Four CONUS `3dep_elevation_*_approx1to3km.tif` service extracts in `3DEP/` | [USGS 3DEP](https://www.usgs.gov/3d-elevation-program) |
 | Transportation | `USGS_Transportation/Transportation_National_GPKG.zip` and its extracted GeoPackage | [USGS Transportation](https://www.usgs.gov/the-national-map-data-delivery/gis-data-download) |
 | Hydrography | 49 CONUS/DC `NHD_H_*_State_GDB.zip` files, the state archive manifest, and source hash records in `USGS_Hydrography/` | [USGS Hydrography](https://www.usgs.gov/national-hydrography/access-national-hydrography-products) |
 | FPA-FOD | `FPA_FOD/RDS-2013-0009.7_Data_Format3_GPKG.zip` | [USDA Forest Service](https://research.fs.usda.gov/firelab/products/dataandtools/us-wildfires) |
@@ -32,11 +32,10 @@ cell mask. The local MODIS files are NASA NetCDF subsets with NDVI and quality
 fields. An Earthdata account is needed to obtain them. The 3DEP TIFFs are
 regional image-service exports at about 1 to 3 km spacing.
 
-After the files are present, the remaining processing scripts prepare terrain,
-extract roads, and make reusable distance caches:
+After the files are present, the remaining processing scripts extract roads
+and make reusable distance caches:
 
 ```powershell
-python derive_3dep_terrain.py
 python extract_transportation_gpkg.py
 python precompute_national_roads.py
 python precompute_national_streams.py

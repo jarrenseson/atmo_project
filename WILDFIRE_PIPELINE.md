@@ -39,7 +39,7 @@ python build_wildfire_dataset.py --start 2023-01 --end 2024-12 --output wildfire
 
 The finished local dataset is `wildfire_dataset.parquet`. Its audit passed for
 24 months, 779,958 cells, and 18,718,992 unique cell-month rows. It contains
-147,295 fire-positive rows. There are 15,303,339 rows with every source
+147,295 fire-positive rows. There are 15,374,711 rows with every source
 feature present.
 
 | Source | Output fields |
@@ -47,7 +47,7 @@ feature present.
 | gridMET | `tmax_c`, `tmin_c`, `precip_mm`, `wind_m_s` |
 | Annual NLCD | `land_cover_previous_year`; 2025 NLCD also defines the CONUS grid mask |
 | MOD13Q1 | `ndvi_prior`, `ndvi_age_days` |
-| USGS 3DEP | `elevation_m`, `slope_deg`, `aspect_deg`, `curvature_per_m`, `aspect_sin`, `aspect_cos` |
+| USGS 3DEP | `elevation_m` |
 | USGS Transportation | `road_distance_m` |
 | USGS Hydrography | `stream_distance_m` |
 | USDA FPA-FOD | `fire_count`, `wildfire_recorded` |
@@ -70,7 +70,8 @@ The final file is `wildfire_dataset.parquet`. It includes the cell ID, cell
 center, month, target, climate, land cover, NDVI, terrain, road distance, and
 stream distance. It stores aggregation metadata in the Parquet file. Monthly
 files under `wildfire_dataset/year=YYYY/month_num=MM/` are a resume cache.
-The final file, raw sources, and monthly cache remain outside Git.
+The final file, raw sources, and monthly cache remain outside Git. The output
+has 20 columns; slope, aspect, curvature, and aspect encodings are omitted.
 `wildfire_dataset/_cells.parquet` stores the static grid. Recreate only the
 single file from completed monthly files with:
 
@@ -103,9 +104,8 @@ complete feature rows, and nonmissing values for each source field.
 - NDVI is the mean of quality-screened pixels from the latest 16-day composite
   that ended before the target month. `ndvi_age_days` records its age.
 - Land cover is the most common class in the cell from the **previous year**.
-- Elevation, slope, aspect, and curvature come from the available 3DEP service
-  extracts. These extracts are about 1-3 km resolution, so slope and curvature
-  do not represent fine terrain.
+- Elevation comes from the available 3DEP service extracts. These extracts
+  are about 1-3 km resolution.
 - Road and stream distances are measured from each cell center to the nearest
   selected line within 50 miles by default. A missing value means no selected
   line was found within that search distance. Stream lines are NHD `FType=460`

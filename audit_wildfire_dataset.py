@@ -19,11 +19,14 @@ FEATURES = {
     "gridMET": ["tmax_c", "tmin_c", "precip_mm", "wind_m_s"],
     "Annual NLCD": ["land_cover_previous_year"],
     "MOD13Q1": ["ndvi_prior", "ndvi_age_days"],
-    "USGS 3DEP": ["elevation_m", "slope_deg", "aspect_deg", "curvature_per_m"],
+    "USGS 3DEP": ["elevation_m"],
     "USGS Transportation": ["road_distance_m"],
     "USGS Hydrography": ["stream_distance_m"],
     "USDA FPA-FOD": ["fire_count", "wildfire_recorded"],
 }
+REMOVED_TERRAIN_COLUMNS = frozenset({
+    "slope_deg", "aspect_deg", "curvature_per_m", "aspect_sin", "aspect_cos",
+})
 
 
 def main() -> None:
@@ -49,6 +52,9 @@ def main() -> None:
     for month, path in found:
         expected_month = month.strftime("%Y-%m")
         frame = dataset_io.read_month(path, month)
+        stale = REMOVED_TERRAIN_COLUMNS.intersection(frame.columns)
+        if stale:
+            raise ValueError(f"{path}: removed terrain columns remain: {sorted(stale)}")
         missing = set(feature_names + ["cell_id", "month"]) - set(frame.columns)
         if missing:
             raise ValueError(f"{path}: missing columns {sorted(missing)}")

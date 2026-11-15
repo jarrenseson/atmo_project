@@ -78,6 +78,9 @@ GRID = "/MODIS_Grid_16DAY_250m_500m_VI/Data_Fields/"
 MODIS_NAME = re.compile(r"MOD13Q1\.A(\d{4})(\d{3})\.(h\d{2}v\d{2})\.")
 NLCD_NAME = "Annual_NLCD_LndCov_{year}_CU_C1V2.zip"
 CLIMATE = {"tmmx": "tmax_c", "tmmn": "tmin_c", "pr": "precip_mm", "vs": "wind_m_s"}
+REMOVED_TERRAIN_COLUMNS = frozenset({
+    "slope_deg", "aspect_deg", "curvature_per_m", "aspect_sin", "aspect_cos",
+})
 
 
 def months(first: dt.date, last: dt.date):
@@ -179,29 +182,20 @@ def pack_cell(cols, rows):
     return (col << 32) | (row & np.int64(0xFFFFFFFF))
 
 
-def sample_topography(raw: Path, shape, transform, valid) -> dict[str, np.ndarray]:
-    result = {}
+def sample_elevation(raw: Path, shape, transform, valid) -> np.ndarray:
     base = raw / "3DEP"
-    for name, folder, prefix in (
-        ("elevation_m", base, "3dep_elevation_conus_*_approx1to3km.tif"),
-        ("slope_deg", base / "derived", "3dep_slope_conus_*_approx1to3km.tif"),
-        ("aspect_deg", base / "derived", "3dep_aspect_conus_*_approx1to3km.tif"),
-        ("curvature_per_m", base / "derived", "3dep_curvature_conus_*_approx1to3km.tif"),
-    ):
-        paths = sorted(folder.glob(prefix))
-        if len(paths) != 4:
-            raise FileNotFoundError(f"Expected four CONUS {name} TIFFs in {folder}, found {len(paths)}")
-        combined = np.full(shape, np.nan, dtype=np.float32)
-        for path in paths:
-            with rasterio.open(path) as source:
-                method = Resampling.nearest if name == "aspect_deg" else Resampling.bilinear
-                image = warp_band(source, shape, transform, method)
-                if source.nodata is None:
-                    image[np.isclose(image, -9999)] = np.nan
-                fill = np.isfinite(image)
-                combined[fill] = image[fill]
-        result[name] = combined[valid]
-    return result
+    paths = sorted(base.glob("3dep_elevation_conus_*_approx1to3km.tif"))
+    if len(paths) != 4:
+        raise FileNotFoundError(f"Expected four CONUS elevation TIFFs in {base}, found {len(paths)}")
+    combined = np.full(shape, np.nan, dtype=np.float32)
+    for path in paths:
+        with rasterio.open(path) as source:
+            image = warp_band(source, shape, transform, Resampling.bilinear)
+            if source.nodata is None:
+                image[np.isclose(image, -9999)] = np.nan
+            fill = np.isfinite(image)
+            combined[fill] = image[fill]
+    return combined[valid]
 
 
 def land_cover(raw: Path, year: int, shape, transform, valid) -> np.ndarray:
@@ -458,11 +452,7 @@ def static_cells(raw: Path, output: Path, bbox, search_miles: float, tile_cells:
     shape = valid.shape
     if cells.empty:
         raise ValueError("No CONUS land-cover cells in the selected area")
-    for name, values in sample_topography(raw, shape, transform, valid).items():
-        cells[name] = values
-    aspect_rad = np.deg2rad(cells["aspect_deg"].to_numpy())
-    cells["aspect_sin"] = np.sin(aspect_rad).astype(np.float32)
-    cells["aspect_cos"] = np.cos(aspect_rad).astype(np.float32)
+    cells["elevation_m"] = sample_elevation(raw, shape, transform, valid)
     if skip_proximity:
         cells["road_distance_m"] = np.nan
         cells["stream_distance_m"] = np.nan
@@ -747,6 +737,9 @@ def combine_partitions(output: Path, single_file: Path) -> None:
                 source = pq.ParquetFile(part)
                 if source.metadata.num_rows != cells:
                     raise ValueError(f"Incomplete monthly part: {part}")
+                stale = REMOVED_TERRAIN_COLUMNS.intersection(source.schema_arrow.names)
+                if stale:
+                    raise ValueError(f"Monthly part has removed terrain columns {sorted(stale)}: {part}; rebuild it")
                 table = source.read()
                 if writer is None:
                     source_schema = table.schema
@@ -808,6 +801,9 @@ def run(args):
             raise ValueError("Static settings differ from the cached cells; use a new output folder")
         current_cells, valid, transform = make_grid(raw, args.bbox)
         cells = pd.read_parquet(static_file)
+        stale = REMOVED_TERRAIN_COLUMNS.intersection(cells.columns)
+        if stale:
+            raise ValueError(f"Cached cells have removed terrain columns {sorted(stale)}; use a new output folder")
         if not np.array_equal(current_cells.cell_id.to_numpy(), cells.cell_id.to_numpy()):
             raise ValueError("Cached grid differs from this run's grid; use a new output folder")
     else:
@@ -864,12 +860,12 @@ def run(args):
             "climate": "Daily gridMET summarized over previous month, then nearest native approximately 4-km cell.",
             "land_cover": "Modal 30-m NLCD class within each 2-mile cell; zero means missing class.",
             "ndvi": "Mean of valid 250-m pixels within each cell; only pixel reliability 0 is used.",
-            "terrain": "Elevation, slope, and curvature bilinearly sampled; aspect sampled by nearest pixel.",
+            "terrain": "Elevation bilinearly sampled from USGS 3DEP service extracts.",
         },
         "road_stream_distance": "Metres from cell center to nearest selected line within search radius; null if none found.",
         "min_modis_tile_coverage": args.min_ndvi_tile_coverage,
         "distance_search_miles": args.search_miles, "proximity_skipped": args.skip_proximity,
-        "topography": "USGS 3DEP service extracts resampled to approximately 1-3 km; slope, aspect, curvature are derived.",
+        "topography": "USGS 3DEP elevation service extracts resampled to approximately 1-3 km.",
         "historical_vector_note": "Current road and stream geometry is used for historical months; road changes can affect retrospective results.",
         "fire_location_note": "Some FPA-FOD point locations are only accurate to a one-square-mile section.",
         "input_root": str(raw),
